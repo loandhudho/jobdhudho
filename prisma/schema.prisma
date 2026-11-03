@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -122,14 +123,14 @@ model JobSeekerProfile {
 }
 
 model Education {
-  id             String           @id @default(uuid()) @db.Uuid
-  profileId      String           @db.Uuid @map("profile_id")
-  institution    String
-  qualification  String
-  fieldOfStudy   String?          @map("field_of_study")
-  startYear      Int?             @map("start_year")
-  endYear        Int?             @map("end_year")
-  profile        JobSeekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id            String           @id @default(uuid()) @db.Uuid
+  profileId     String           @db.Uuid @map("profile_id")
+  institution   String
+  qualification String
+  fieldOfStudy  String?          @map("field_of_study")
+  startYear     Int?             @map("start_year")
+  endYear       Int?             @map("end_year")
+  profile       JobSeekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
   @@map("educations")
@@ -139,7 +140,7 @@ model Experience {
   id          String           @id @default(uuid()) @db.Uuid
   profileId   String           @db.Uuid @map("profile_id")
   companyName String           @map("company_name")
-  jobTitle    String           @map("job_title")
+  jobTitle    String            @map("job_title")
   location    String?
   startDate   DateTime         @map("start_date") @db.Date
   endDate     DateTime?        @map("end_date") @db.Date
@@ -152,10 +153,10 @@ model Experience {
 }
 
 model Skill {
-  id        String        @id @default(uuid()) @db.Uuid
-  name      String        @unique
-  seekers   SeekerSkill[]
-  jobs      JobSkill[]
+  id      String        @id @default(uuid()) @db.Uuid
+  name    String        @unique
+  seekers SeekerSkill[]
+  jobs    JobSkill[]
 
   @@map("skills")
 }
@@ -171,22 +172,22 @@ model SeekerSkill {
 }
 
 model Company {
-  id             String           @id @default(uuid()) @db.Uuid
-  name           String
-  slug           String           @unique
-  website        String?
-  description    String?
-  logoUrl        String?          @map("logo_url")
-  industry       String?
-  companySize    String?          @map("company_size")
-  city           String?
-  state          String?
-  status         EmployerStatus   @default(PENDING)
-  verifiedAt     DateTime?        @map("verified_at")
-  members        EmployerMember[]
-  jobs           Job[]
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
+  id          String           @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String           @unique
+  website     String?
+  description String?
+  logoUrl     String?          @map("logo_url")
+  industry    String?
+  companySize String?          @map("company_size")
+  city        String?
+  state       String?
+  status      EmployerStatus   @default(PENDING)
+  verifiedAt  DateTime?        @map("verified_at")
+  members     EmployerMember[]
+  jobs        Job[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
 
   @@index([status, name])
   @@map("companies")
@@ -206,44 +207,44 @@ model EmployerMember {
 }
 
 model JobCategory {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @unique
-  slug      String   @unique
-  jobs      Job[]
+  id   String   @id @default(uuid()) @db.Uuid
+  name String   @unique
+  slug String   @unique
+  jobs Job[]
 
   @@map("job_categories")
 }
 
 model Job {
-  id               String           @id @default(uuid()) @db.Uuid
-  companyId        String           @db.Uuid @map("company_id")
-  categoryId       String?          @db.Uuid @map("category_id")
-  title            String
-  slug             String           @unique
-  description      String
-  responsibilities String?
-  requirements     String?
-  city             String?
-  state            String?
-  country          String           @default("India")
-  salaryMin        Int?              @map("salary_min")
-  salaryMax        Int?              @map("salary_max")
-  salaryCurrency   String            @default("INR") @map("salary_currency")
-  type             JobType           @default(FULL_TIME)
-  workMode         WorkMode          @default(ONSITE) @map("work_mode")
-  experienceLevel  ExperienceLevel   @default(FRESHER) @map("experience_level")
-  status           JobStatus         @default(DRAFT)
-  applicationUrl   String?           @map("application_url")
-  applicationDeadline DateTime?      @map("application_deadline")
-  publishedAt      DateTime?         @map("published_at")
-  expiresAt        DateTime?         @map("expires_at")
-  company          Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  category         JobCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  skills           JobSkill[]
-  applications     Application[]
-  savedBy          SavedJob[]
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
+  id                  String           @id @default(uuid()) @db.Uuid
+  companyId           String           @db.Uuid @map("company_id")
+  categoryId          String?          @db.Uuid @map("category_id")
+  title               String
+  slug                String           @unique
+  description         String
+  responsibilities    String?
+  requirements        String?
+  city                String?
+  state               String?
+  country             String           @default("India")
+  salaryMin           Int?             @map("salary_min")
+  salaryMax           Int?             @map("salary_max")
+  salaryCurrency      String           @default("INR") @map("salary_currency")
+  type                JobType          @default(FULL_TIME)
+  workMode            WorkMode         @default(ONSITE) @map("work_mode")
+  experienceLevel     ExperienceLevel  @default(FRESHER) @map("experience_level")
+  status              JobStatus        @default(DRAFT)
+  applicationUrl      String?          @map("application_url")
+  applicationDeadline DateTime?        @map("application_deadline")
+  publishedAt         DateTime?        @map("published_at")
+  expiresAt           DateTime?        @map("expires_at")
+  company             Company          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  category            JobCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  skills              JobSkill[]
+  applications        Application[]
+  savedBy             SavedJob[]
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
 
   @@index([status, publishedAt])
   @@index([city, state, workMode])
@@ -262,18 +263,18 @@ model JobSkill {
 }
 
 model Application {
-  id           String            @id @default(uuid()) @db.Uuid
-  jobId        String            @db.Uuid @map("job_id")
-  userId       String            @db.Uuid @map("user_id")
-  profileId    String            @db.Uuid @map("profile_id")
-  resumeUrl    String?           @map("resume_url")
-  coverLetter  String?           @map("cover_letter")
-  status       ApplicationStatus @default(APPLIED)
-  appliedAt    DateTime          @default(now()) @map("applied_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
-  job          Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  profile      JobSeekerProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id          String            @id @default(uuid()) @db.Uuid
+  jobId       String            @db.Uuid @map("job_id")
+  userId      String            @db.Uuid @map("user_id")
+  profileId   String            @db.Uuid @map("profile_id")
+  resumeUrl   String?           @map("resume_url")
+  coverLetter String?           @map("cover_letter")
+  status      ApplicationStatus @default(APPLIED)
+  appliedAt   DateTime          @default(now()) @map("applied_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile     JobSeekerProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@unique([jobId, userId])
   @@index([jobId, status])
@@ -293,17 +294,17 @@ model SavedJob {
 }
 
 model WhatsAppConsent {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @unique @db.Uuid @map("user_id")
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @unique @db.Uuid @map("user_id")
   phone       String
-  optedIn     Boolean  @default(false) @map("opted_in")
-  consentText String?  @map("consent_text")
+  optedIn     Boolean   @default(false) @map("opted_in")
+  consentText String?   @map("consent_text")
   source      String?
   optedInAt   DateTime? @map("opted_in_at")
   optedOutAt  DateTime? @map("opted_out_at")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@map("whatsapp_consents")
 }
