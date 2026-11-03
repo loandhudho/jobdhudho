@@ -84,24 +84,51 @@ alter table public.jobs enable row level security;
 alter table public.applications enable row level security;
 alter table public.saved_jobs enable row level security;
 
--- Users can read and update only their own profile.
+-- Users can read their own profile. Profile writes will use validated server actions.
 create policy "profiles_select_own" on public.profiles for select to authenticated using (id = auth.uid());
-create policy "profiles_update_own" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
--- Public can view verified company profiles.
+-- Prevent users from changing their own role through direct table updates.
+create or replace function public.prevent_profile_role_escalation()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+begin
+  if new.role is distinct from old.role and coalesce(auth.role(), '') <> 'service_role' then
+    raise exception 'Profile role changes require trusted administrative authorization';
+  end if;
+  return new;
+end;
+$;
+
+create trigger profiles_protect_role
+before update on public.profiles
+for each row execute function public.prevent_profile_role_escalation();
+
+-- Public can view verified company profiles; owners can view their own pending records.
 create policy "companies_public_verified" on public.companies for select using (verification_status = 'verified');
-create policy "companies_owner_manage" on public.companies for all to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+create policy "companies_owner_read" on public.companies for select to authenticated using (owner_id = auth.uid());
+create policy "companies_owner_insert_pending" on public.companies for insert to authenticated
+with check (owner_id = auth.uid() and verification_status = 'pending');
+create policy "companies_owner_update_pending" on public.companies for update to authenticated
+using (owner_id = auth.uid()) with check (owner_id = auth.uid() and verification_status = 'pending');
 
--- Published jobs are public. Employer writes are limited to their own company.
+-- Published jobs are public. Employer owners may create pending jobs and edit only non-published jobs.
 create policy "jobs_public_published" on public.jobs for select using (status = 'published');
-create policy "jobs_employer_manage" on public.jobs for all to authenticated
-using (exists (select 1 from public.companies c where c.id = company_id and c.owner_id = auth.uid()))
-with check (exists (select 1 from public.companies c where c.id = company_id and c.owner_id = auth.uid()));
+create policy "jobs_employer_read_own" on public.jobs for select to authenticated
+using (exists (select 1 from public.companies c where c.id = company_id and c.owner_id = auth.uid()));
+create policy "jobs_employer_insert_pending" on public.jobs for insert to authenticated
+with check (status in ('draft','pending') and created_by = auth.uid()
+  and exists (select 1 from public.companies c where c.id = company_id and c.owner_id = auth.uid() and c.verification_status = 'verified'));
+create policy "jobs_employer_update_unpublished" on public.jobs for update to authenticated
+using (status in ('draft','pending','paused') and exists (select 1 from public.companies c where c.id = company_id and c.owner_id = auth.uid()))
+with check (status in ('draft','pending','paused') and exists (select 1 from public.companies c where c.id = company_id and c.owner_id = auth.uid()));
 
--- Candidates can read their own applications; job owners can read applications to their jobs.
+-- Candidates may apply only to published jobs. Status changes are reserved for trusted employer workflows.
 create policy "applications_candidate_read" on public.applications for select to authenticated using (candidate_id = auth.uid());
-create policy "applications_candidate_insert" on public.applications for insert to authenticated with check (candidate_id = auth.uid());
-create policy "applications_candidate_update" on public.applications for update to authenticated using (candidate_id = auth.uid()) with check (candidate_id = auth.uid());
+create policy "applications_candidate_insert" on public.applications for insert to authenticated
+with check (candidate_id = auth.uid() and exists (select 1 from public.jobs j where j.id = job_id and j.status = 'published'));
 create policy "applications_employer_read" on public.applications for select to authenticated using (
   exists (select 1 from public.jobs j join public.companies c on c.id = j.company_id where j.id = job_id and c.owner_id = auth.uid())
 );
