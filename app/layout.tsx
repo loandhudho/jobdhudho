@@ -7,7 +7,6 @@ export const metadata: Metadata = {
     template: "%s | Job Dhudho"
   },
   description: "Discover verified job opportunities across India. Search by role, skills, location and experience on Job Dhudho.",
-  metadataBase: new URL("https://jobdhudho.com")
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
